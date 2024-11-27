@@ -35,5 +35,16 @@ def option_metric_query(tick,year,day=None,month=None):
     return req
     #return df
 
+def yield_curve_query(start=None,end=None):
+    req="""
+        SELECT *
+        FROM optionm.zerocd
+            WHERE 1=1 
+        """
+    if start:
+        req+=f""" and date >= '{start}'"""
+    if end:
+        req+=f""" and date <= '{end}'"""
+    return req
 
 
