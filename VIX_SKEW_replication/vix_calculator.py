@@ -32,6 +32,9 @@ def retreiev_OM_data(periods_dict): #MAYBE only allow one month and year here
     retrieve daily OptionMetrics data stored in monthly-level files
     link: https://umd.box.com/s/m7ak9i8e1uotzrpiumnvnj9sfk22reyh
     """
+    ################
+    #client=make_client()
+    ################
     returned_dfs=[]
     om_folder_srch=client.search().query(query='OptionMetrics', type='folder')
     om_folder_id=[item.id for item in om_folder_srch][0]
@@ -287,9 +290,31 @@ def calculate_vix_daily(day_df):
     return sigma
 
 
-def func1():
-
-    return 1
+def vix_main_func(df):
+    print('__selecting options__')
+    df2=filter_option_types_and_expirations(df)
+    df3=add_expiration_time(df2)
+    df5=df3.copy() #skipping to df5
+    df5['time_to_exp']=df5['ex_time']-df5['datetime_close']
+    df5['midpoint_price']=(df5.best_bid+df5.best_offer)/2
+    df5['strike_price']/=1000
+    vix_dict={}
+    excl_dates=[]
+    print('__calculating daily VIX__')
+    for day_i in df5.date.unique():
+        #print(str(day_i.date()))
+        day_df_i=df5[df5.date==str(day_i.date())]
+        try:
+            sigma=calculate_vix_daily(day_df_i)
+            #print(sigma)
+            vix_dict[str(day_i.date())]=sigma
+        except:
+            print(f'error with {str(day_i.date())}')
+    
+    vix_rep_df=pd.DataFrame.from_dict(vix_dict,orient='index')
+    vix_rep_df.index.name='Date'
+    vix_rep_df.columns=['vix_rep']
+    return vix_rep_df
 
 def func1():
 
