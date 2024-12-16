@@ -16,6 +16,7 @@ from creds import (token as token,
 
 
 def make_client():
+    #print(token)
     auth = OAuth2(
         client_id=client_id,
         client_secret=client_secret,
@@ -24,6 +25,23 @@ def make_client():
 
     client=Client(auth)
     return client
+
+client=make_client()
+
+def get_folder_id(query='OptionMetrics'):
+    #client=make_client()
+    om_folder_srch=client.search().query(query=query, type='folder')
+    om_folder_id=[item.id for item in om_folder_srch][0]
+    return om_folder_id
+
+def upload_to_box(path,name):
+    #update file
+        #https://github.com/box/box-python-sdk/blob/main/docs/usage/files.md#upload-a-new-version-of-a-file
+    om_folder_id=get_folder_id('OptionMetrics')
+    #client.folder(om_folder_id).upload(file_path=path,file_name=name) 
+    chunked_uploader=client.folder(om_folder_id).get_chunked_uploader(path,name) 
+    uploaded_file = chunked_uploader.start()
+
 
 def pull_data_off_box(periods_dict):
     client=make_client()
@@ -56,6 +74,4 @@ def pull_data_off_box(periods_dict):
                 df = pd.read_csv(data)
                 #dest=r'vix_approx_research/white_paper_replicate'
                 #df.to_csv(rf'{dest}/{r.name}')
-
-
 
