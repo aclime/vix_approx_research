@@ -125,6 +125,7 @@ def filter_option_types_and_expirations(df):
     df3=df2[~( (df2.exp_code==2) & (df2.symbol.str.contains('SPXW')) )]
     return df3
 
+"""
 def add_expiration_time(df3): #SLOWWWWW
     #standard SPX 9:30 a.m. ET
     #weekly SPXW 4:15 p.m. ET
@@ -134,9 +135,9 @@ def add_expiration_time(df3): #SLOWWWWW
     def add_exp_time(row):
         exp_date=row.exdate
         exp_code=row.exp_code
-        if exp_code==2:
+        if exp_code==2: #standard SPX
             exp_time=pytz.timezone('US/Eastern').localize(exp_date.replace(hour=9,minute=30))
-        elif exp_code==1:
+        elif exp_code==1: #weekly SPXW
             exp_time=pytz.timezone('US/Eastern').localize(exp_date.replace(hour=16,minute=15))
         return exp_time
     
@@ -146,6 +147,34 @@ def add_expiration_time(df3): #SLOWWWWW
     #add timestamp to expiration date based on rules
     df4['ex_time']=df4.apply(add_exp_time,axis=1)
     return df4
+
+"""
+from IPython.display import display
+def add_expiration_time(df3): 
+    #standard SPX 9:30 a.m. ET
+    #weekly SPXW 4:15 p.m. ET
+    #Taking out non-friday expirations
+    df4=df3[df3.exp_code!=0]
+
+    #a=df4.values
+    #am_func=np.vectorize(lambda x:pytz.timezone('US/Eastern').localize(x.replace(hour=9,minute=30))  )
+    #pm_func=np.vectorize(lambda x:pytz.timezone('US/Eastern').localize(x.replace(hour=16,minute=15))  )
+    df4=df4.copy()
+    #df4['ex_time']=np.where(a[:,-2]==2,
+    #                        am_func(a[:,6]),
+    #                        pm_func(a[:,6]) )
+    df4['datetime_close']=df4['date']+pd.Timedelta(hours=16,minutes=15)
+
+    df4['ex_time']=np.where(df4['exp_code']==2, 
+                            df4['exdate']+pd.Timedelta(hours=9,minutes=30),
+                            df4['exdate']+pd.Timedelta(hours=16,minutes=15) )
+    
+    #df4.dropna(subset=['ex_time'],axis=0,inplace=True)
+    return df4
+"""
+
+""""""
+"""
 
 def find_between(lst, num):
     """Finds the two numbers in a sorted list that a given number is between."""
@@ -161,7 +190,12 @@ def calculate_interest_rates(current_date,t):
     #prior_day=current_date-timedelta(days=1)
     #print(prior_day)
     #yc_yday=yc_pull.loc[str(prior_day)]
-    yc_yday=yc_pull.iloc[ yc_pull.index.get_loc(str(current_date))+1 ]
+    
+    #yc_yday=yc_pull.iloc[ yc_pull.index.get_loc(str(current_date))+1 ]
+    try:
+        yc_yday=yc_pull.iloc[ yc_pull.index.get_loc(str(current_date))+1 ]
+    except:
+        yc_yday=yc_pull.iloc[yc_pull.index.get_indexer([str(current_date)],method='bfill')[0] ]
     
     #print(yc_yday)
     #t=next_term_df.iloc[0].time_to_exp.days
@@ -302,14 +336,17 @@ def vix_main_func(df):
     excl_dates=[]
     print('__calculating daily VIX__')
     for day_i in df5.date.unique():
-        #print(str(day_i.date()))
+        print(str(day_i.date()))
         day_df_i=df5[df5.date==str(day_i.date())]
-        try:
-            sigma=calculate_vix_daily(day_df_i)
-            #print(sigma)
-            vix_dict[str(day_i.date())]=sigma
-        except:
-            print(f'error with {str(day_i.date())}')
+        
+        sigma=calculate_vix_daily(day_df_i)
+        vix_dict[str(day_i.date())]=sigma
+        #try:
+        #    sigma=calculate_vix_daily(day_df_i)
+        #    #print(sigma)
+        #    vix_dict[str(day_i.date())]=sigma
+        #except:
+        #    print(f'error with {str(day_i.date())}')
     
     vix_rep_df=pd.DataFrame.from_dict(vix_dict,orient='index')
     vix_rep_df.index.name='Date'

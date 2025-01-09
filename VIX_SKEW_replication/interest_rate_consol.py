@@ -12,6 +12,7 @@ def consolidate_treasurey_files():
     combined_df=pd.concat([pd.read_csv(f) for f in daily_files_by_year])
     combined_df['Date']=pd.to_datetime(combined_df['Date'])
     combined_df.set_index(['Date'],inplace=True)
+    combined_df.sort_index(ascending=False,inplace=True)
     combined_df/=100
     
     #combined_df.columns=[maturity_mapping.get(col) for col in combined_df.columns]
