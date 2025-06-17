@@ -207,11 +207,25 @@ def calculate_interest_rates(current_date,t):
     
     intvl=find_between(list(yc_yday.keys()), t) 
     if intvl:
-        BEY=CubicSpline(list(intvl),[yc_yday[i] for i in intvl],
-                        bc_type='natural',extrapolate=True )(t,0)
-        #print(BEY)
-        APY=(1+BEY/2)**2-1
-        r=np.log(1+APY)
+        try:
+            BEY=CubicSpline(list(intvl),[yc_yday[i] for i in intvl],
+                            bc_type='natural',extrapolate=True )(t,0)
+            #print(BEY)
+            APY=(1+BEY/2)**2-1
+            r=np.log(1+APY)
+        except:
+            #problem no interest rate for 120 days, use 182 instead if 121 not avail
+            #print('================')
+            yc_yday=yc_yday.dropna()
+            intvl=find_between(list(yc_yday.keys()), t)
+            BEY=CubicSpline(list(intvl),[yc_yday[i] for i in intvl],
+                bc_type='natural',extrapolate=True )(t,0)
+            #print(BEY)
+            APY=(1+BEY/2)**2-1
+            r=np.log(1+APY)
+            #print('================')
+            #print(3/0)
+
     elif t<min(yc_yday.index):
         t_1,CMT_1=yc_yday.index[0],yc_yday.iloc[0]
         t_x,CMT_x=yc_yday.index[1],yc_yday.iloc[1]
